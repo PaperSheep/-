@@ -1,11 +1,13 @@
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.views import View
 
 from .forms import StudentForm
 from .models import Student
 
 # Create your views here.
+# 封装成类
 def index(request):
     # 使用models.py文件里自己封装的方法get_all()
     students = Student.get_all()
@@ -34,3 +36,28 @@ def index(request):
     context['form'] = form
     return render(request, 'student/index.html', context)
 
+class IndexView(View):
+    template_name = 'student/index.html'
+
+    def get_context(self):
+        students = Student.get_all()
+        context = {}
+        context['students'] = students
+        return context
+
+    # 处理get请求
+    def get(self, request):
+        context = self.get_context()
+        form = StudentForm()
+        context['form'] = form
+        return render(request, self.template_name, context)
+
+    # 处理post请求
+    def post(self, request):
+        form =  StudentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse('index'))
+        context = self.get_context()
+        context['form'] = form
+        return render(request, self.template_name, context)
